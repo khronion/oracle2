@@ -57,6 +57,9 @@ class Delphi:
         self.mode = "major"
         self.target = None
 
+        # initiate tracking
+        self.start()
+
     # main command processor
 
     def reload(self, regions=""):
@@ -181,8 +184,11 @@ class Delphi:
                 {} <filename> - export CSV of oracle data for founderless regions using current update mode
                 {} <filename> - export HTML of oracle data using current update mode
                 {} - reload regions.xml.gz and reset Oracle settings to default
+                {} - start automatic region tracking via API (engaged by default)
+                {} - stop automatic region tracking via API
                 """.format(self.cmd_time, self.cmd_mode, self.cmd_review, self.cmd_offset, self.cmd_calibrate,
-                           self.cmd_export, self.cmd_targets, self.cmd_html, self.cmd_reload)
+                           self.cmd_export, self.cmd_targets, self.cmd_html, self.cmd_reload, self.cmd_start,
+                           self.cmd_stop)
 
         except IndexError:
             return "ERROR: malformed command."
@@ -191,6 +197,11 @@ class Delphi:
     tracking = False
 
     def start(self):
+        """
+        Starts API tracking.
+
+        :return: user-readable response string
+        """
         if not self.tracking:
             self.tracking = True
             self.thread = threading.Thread(target=self.api_runner)
@@ -200,6 +211,11 @@ class Delphi:
             return "Scanner already active."
 
     def stop(self):
+        """
+        Stops API tracking.
+
+        :return: user-readable response string
+        """
         if self.tracking:
             self.tracking = False
             return "Scanner deactivated."
@@ -210,6 +226,7 @@ class Delphi:
         """
         Tracks the NationStates API, looking for influence changes to determine when a region has updated.
         """
+        print("INFO: Tracker starting up.")
         while self.tracking is True:
             # get the latest happenings
             try:
@@ -236,11 +253,11 @@ class Delphi:
                     # if we find an influence change, process it.
                     if "influence in" in event_text:
                         region = self.find_between(event_text, "%%", "%%").replace("_", " ")
-                        #print("INFO: region '{}' updating during {} update at {}:{}:{}.".format(region, mode, h, m, s))
                         try:
                             self.oracle.set_offset(region, h * 3600 + m * 60 + s, mode)
                         except KeyError:
-                            print("Error! Couldn't update offset. Is the daily dump updated?")
+                            print("Warning: Couldn't update offset for region {}. "
+                                  "Is the daily dump updated?".format(region))
                             pass
                         break
             except TimeoutError:

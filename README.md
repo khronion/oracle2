@@ -14,7 +14,7 @@ The program is somewhat similar to [ADR-20XX](https://github.com/doomjaw/ADR-20X
 ##Getting Started
 Download a copy of the latest regions.xml.gz to the same directory as the Oracle2 installation, and run Oracle2 by typing
 
-```python3 delphi.py```
+```*python3 delphi.py*```
 
 You will be asked to supply your nation name -- This is required by the NationStates terms-of-service.
 
@@ -37,6 +37,8 @@ export <filename> - export CSV of oracle data using current update mode
 targets <filename> - export CSV of oracle data for founderless regions using current update mode
 html <filename> - export HTML of oracle data using current update mode
 reload - reload regions.xml.gz and reset Oracle settings to default
+start - start automatic region tracking via API (engaged by default)
+stop - stop automatic region tracking via API
 ```
 
 ##Disclaimer
