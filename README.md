@@ -14,12 +14,12 @@ The program is somewhat similar to [ADR-20XX](https://github.com/doomjaw/ADR-20X
 ##Getting Started
 Download a copy of the latest regions.xml.gz to the same directory as the Oracle2 installation, and run Oracle2 by typing
 
-```*python3 delphi.py*```
+```python3 delphi.py```
 
 You will be asked to supply your nation name -- This is required by the NationStates terms-of-service.
 
 ```
-Unique identifier (use an email or nation name): *khronion*
+Unique identifier (use an email or nation name): khronion
 Update speed values generated on 3/26 (major: spear danes; minor: unity)
 Ready.
 > 
@@ -42,4 +42,4 @@ stop - stop automatic region tracking via API
 ```
 
 ##Disclaimer
-Oracle2 is designed to respect the NationStates API ratelimit. However, you may inaverdently exceed the ratelimit if you run multiple instances of Oracle2, or run another API-utilizing program at the same time.
+Oracle2 is designed to respect the NationStates API ratelimit. However, you may inadvertently exceed the ratelimit if you run multiple instances of Oracle2, or run another API-utilizing program at the same time.
