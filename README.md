@@ -2,12 +2,14 @@
 *Python-based update tracker for NationStates*
 
 ##Overview
-*Oracle2* uses daily dump data supplied by NationStates to track the progress of the game's twice-daily regional update in order to make accurate predictions of a region's true update. It does so through a combination of linear regression combined with a correction value based off of observed error between its predictions and true observed times, which can be specified manually or be automatically scraped via API.
+*Oracle2* is a cross-platform NationStates update tracker written in Python. It uses daily dump data supplied by NationStates to track the progress of the game's twice-daily regional update in order to make accurate predictions of a region's true update. It does so through a combination of linear regression combined with a correction value based off of observed error between its predictions and true observed times, which can be specified manually or be automatically scraped via API. The program can also be used to quickly generate spreadsheets to aid manual triggering.
 
 It consists of two Python classes:
 
 * `oracle.py` -- Parses daily dump data to predict regional update times and calculates error offsets based on supplied true time data.
 * `delphi.py` -- Provides a front-end to Oracle allowing interactive terminal use and automatic API scraping for true update times.
+
+The program is somewhat similar to [ADR-20XX](https://github.com/doomjaw/ADR-20XX/), which uses a slightly more sophisticated tracking algorithim implemented in .NET.
 
 ##Getting Started
 Download a copy of the latest regions.xml.gz to the same directory as the Oracle2 installation, and run Oracle2 by typing
