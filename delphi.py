@@ -3,6 +3,8 @@ import time
 import threading
 import datetime
 import urllib.request
+import urllib
+import shutil
 import xml.etree.ElementTree as ET
 
 
@@ -261,7 +263,7 @@ class Delphi:
                             pass
                         break
             except TimeoutError:
-                print("Warning: Connection timed out. Sleeping 5 seconds.")
+                print("Warning: Connection timed out. Sleeping 5 seconds. ")
                 time.sleep(5)
 
         print("INFO: Tracker shutting down.")
@@ -277,12 +279,20 @@ class Delphi:
 
 
 if __name__ == '__main__':
-    print("Delphi: Proof-of-concept Oracle Shell\n")
-    ua = input("Unique identifier (use an email or nation name): ")
+    print("Delphi: Interactive Oracle Shell\n")
+    ua = input("Primary Nation Name: ")
+
+    refresh = input("Do you want to download the latest daily dump? (Y/N) ")
+    if refresh.lower() == 'y':
+        print("Downloading...")
+        url = 'https://www.nationstates.net/pages/regions.xml.gz'
+        request = urllib.request.Request(url=url, headers={'User-Agent': "oracle2/{}".format(ua)})
+        with urllib.request.urlopen(request) as r, open("regions.xml.gz", 'wb') as out:
+            shutil.copyfileobj(r, out)
+            out.close()
+        print("Download complete.")
 
     delphi = Delphi(regions="./regions.xml.gz", ua=ua)
-    print("Update speed values generated on", delphi.oracle.speed_last_updated)
-
     while True:
         print("Ready.")
         cmd = input("> ".format(delphi.mode, delphi.target))
