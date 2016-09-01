@@ -24,7 +24,7 @@ import datetime
 
 
 class Oracle:
-    def __init__(self, regions, ua, major=0.030900088714124727, minor=0.021651406951714545):
+    def __init__(self, regions, ua, major=0.0319778995, minor=0.022651406951714545):
         """
         Initializes an Oracle object to process a NationStates regions.xml.gz dump.
 
