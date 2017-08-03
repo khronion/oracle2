@@ -5,10 +5,11 @@ import datetime
 import urllib.request
 import urllib
 import shutil
+import gzip
 import xml.etree.ElementTree as ET
 
 
-# This file is part of Oracle.
+# Delphi Command Interpreter for Oracle2
 #
 # Oracle is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,9 +59,6 @@ class Delphi:
         # persistent state attributes
         self.mode = "major"
         self.target = None
-
-        # initiate tracking
-        self.start()
 
     # main command processor
 
@@ -133,28 +131,6 @@ class Delphi:
                 except KeyError:
                     return "ERROR: No such region {}.".format(region)
 
-            # calibrate (region name) (time)
-            elif action == self.cmd_calibrate:
-                # time will be last text blob
-                t = args[-1].split(':')
-                time = []
-                try:
-                    for i in t:
-                        time.append(int(i))
-                except ValueError:
-                    return "ERROR: Invalid time provided."
-
-                tSec = time[0] * 3600 + time[1] * 60 + time[2]
-
-                # all other text blobs are part of region name
-                region = ' '.join(args[:-1])
-                try:
-                    self.oracle.calibrate(region, tSec, self.mode)
-                    self.oracle.offset = 0
-                    return "New update speed is {} seconds/nation.".format(self.oracle.speed[self.mode])
-                except KeyError:
-                    return "ERROR: No such region {}.".format(region)
-
             elif action == self.cmd_reload:
                 self.reload()
                 return "regions.xml.gz has been reloaded. Offsets and speed corrections reset."
@@ -169,104 +145,28 @@ class Delphi:
                 self.oracle.html_export(self.mode, args[0])
                 return "Exported HTML to {}".format(args[0])
             elif action == self.cmd_start:
-                return self.start()
+                #return self.start()
+                return "This functionality not implemented."
             elif action == self.cmd_stop:
-                return self.stop()
+                #return self.stop()
+                return "This functionality not implemented."
 
             else:
 
-                return """Command not recognized. Please use one of the following:
-
-                {} <region> - get region time
+                return """                {} <region> - get region time
                 {} <major|minor> - set update mode to major or minor
                 {} - recall last targeted  region
                 {} <hh:mm:ss> - indicate true update time in hh:mm:ss of last targeted region
-                {} <region> <hh:mm:ss> - calibrate update speed based on time of late updating region
                 {} <filename> - export CSV of oracle data using current update mode
                 {} <filename> - export CSV of oracle data for founderless regions using current update mode
                 {} <filename> - export HTML of oracle data using current update mode
                 {} - reload regions.xml.gz and reset Oracle settings to default
-                {} - start automatic region tracking via API (engaged by default)
-                {} - stop automatic region tracking via API
-                """.format(self.cmd_time, self.cmd_mode, self.cmd_review, self.cmd_offset, self.cmd_calibrate,
+                """.format(self.cmd_time, self.cmd_mode, self.cmd_review, self.cmd_offset,
                            self.cmd_export, self.cmd_targets, self.cmd_html, self.cmd_reload, self.cmd_start,
                            self.cmd_stop)
 
         except IndexError:
             return "ERROR: malformed command."
-
-    thread = None
-    tracking = False
-
-    def start(self):
-        """
-        Starts API tracking.
-
-        :return: user-readable response string
-        """
-        if not self.tracking:
-            self.tracking = True
-            self.thread = threading.Thread(target=self.api_runner)
-            self.thread.start()
-            return "Scanner activated."
-        else:
-            return "Scanner already active."
-
-    def stop(self):
-        """
-        Stops API tracking.
-
-        :return: user-readable response string
-        """
-        if self.tracking:
-            self.tracking = False
-            return "Scanner deactivated."
-        else:
-            return "Scanner not running."
-
-    def api_runner(self):
-        """
-        Tracks the NationStates API, looking for influence changes to determine when a region has updated.
-        """
-        print("INFO: Tracker starting up.")
-        while self.tracking is True:
-            # get the latest happenings
-            try:
-                api_call = 'http://www.nationstates.net/cgi-bin/api.cgi?q=happenings;filter=change;limit=5'
-                ns_request_url = urllib.request.Request(url=api_call, headers={'User-Agent': self.ua})
-                happenings = ET.fromstring((urllib.request.urlopen(ns_request_url).read().decode())).find("HAPPENINGS")
-                time.sleep(1)
-                for event in happenings:
-
-                    # get HMS of event
-                    event_time = datetime.datetime.fromtimestamp(float(event.find("TIMESTAMP").text), tz=None)
-                    h = event_time.hour
-                    m = event_time.minute
-                    s = event_time.second
-
-                    # are we major or minor update?
-                    if h == 9 or h == 10:
-                        mode = 'minor'
-                        h -= 9
-                    else:
-                        mode = 'major'
-                        h -= 21
-                    event_text = event.find("TEXT").text
-                    # if we find an influence change, process it.
-                    if "influence in" in event_text:
-                        region = self.find_between(event_text, "%%", "%%").replace("_", " ")
-                        try:
-                            self.oracle.set_offset(region, h * 3600 + m * 60 + s, mode)
-                        except KeyError:
-                            print("Warning: Couldn't update offset for region {}. "
-                                  "Is the daily dump updated?".format(region))
-                            pass
-                        break
-            except TimeoutError:
-                print("Warning: Connection timed out. Sleeping 5 seconds. ")
-                time.sleep(5)
-
-        print("INFO: Tracker shutting down.")
 
     @staticmethod
     def find_between(s, first, last):
@@ -280,19 +180,21 @@ class Delphi:
 
 if __name__ == '__main__':
     print("Delphi: Interactive Oracle Shell\n")
-    ua = input("Primary Nation Name: ")
+    user = input("Primary Nation Name: ")
 
     refresh = input("Do you want to download the latest daily dump? (Y/N) ")
     if refresh.lower() == 'y':
-        print("Downloading...")
+        print("Downloading regions.xml.gz...")
         url = 'https://www.nationstates.net/pages/regions.xml.gz'
-        request = urllib.request.Request(url=url, headers={'User-Agent': "oracle2/{}".format(ua)})
+        request = urllib.request.Request(url=url, headers={'User-Agent': "oracle2/{}".format(user)})
         with urllib.request.urlopen(request) as r, open("regions.xml.gz", 'wb') as out:
             shutil.copyfileobj(r, out)
             out.close()
+
         print("Download complete.")
 
-    delphi = Delphi(regions="./regions.xml.gz", ua=ua)
+    delphi = Delphi(regions="./regions.xml.gz", ua=user)
+
     while True:
         print("Ready.")
         cmd = input("> ".format(delphi.mode, delphi.target))
