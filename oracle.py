@@ -3,6 +3,7 @@ import urllib.request
 import urllib
 import gzip
 import datetime
+import UpdTime
 
 # Oracle: Nationstates Region Update Predictor
 # Project page: <https://gitlab.com/khronion/oracle>
@@ -24,19 +25,18 @@ import datetime
 
 
 class Oracle:
-    def __init__(self, regions, ua, major=0.0319778995, minor=0.022651406951714545):
+    def __init__(self, regions, ua):
         """
         Initializes an Oracle object to process a NationStates regions.xml.gz dump.
 
         :param regions: Path to NationStates regions.xml.gz dump
-        :param ua: User Agent string that identifies the operator as required by NS TOS
-        :param major: Time in seconds it takes to update a region during major update
-        :param minor: Time in seconds it takes to update a region during minor update
+        :param ua: User Agent string that identifies the operator as required by NS TOS; Should be an email or nation
+        :param major: Length of major update
+        :param minor: Length of minor update
         """
 
-        self.speed_last_updated = "3/26 (major: spear danes; minor: unity)"
-        self.speed = {'major': major,
-                      'minor': minor}
+        self.speed = UpdTime.UpdTime(ua).get()
+
         self.version = 1
         # set UA
         self.ua = "Oracle {} (developed by khronion@gmail.com, in use by <{}>)".format(self.version, ua)
@@ -44,7 +44,7 @@ class Oracle:
         # set major/minor mode. Assume major unless user passes minor in because seriously, who's around for minor?
 
         # load founderless regions into a list
-        apiCall = 'http://www.nationstates.net/cgi-bin/api.cgi?q=regionsbytag;tags=founderless,-password'
+        apiCall = 'https://www.nationstates.net/cgi-bin/api.cgi?q=regionsbytag;tags=founderless,-password'
         ns_request_url = urllib.request.Request(url=apiCall, headers={'User-Agent': self.ua})
         founderlessXML = ET.fromstring((urllib.request.urlopen(ns_request_url).read().decode()))
         founderlessList = founderlessXML.find("REGIONS").text.lower().split(",")
@@ -96,7 +96,8 @@ class Oracle:
         """
         # update time is given by region's cumulative population * per nation update speed
         cPop = self.lookupTable[region.lower()][1]
-        return cPop * self.speed[mode] - self.offset
+
+        return cPop * self.speed[mode] / self.regionList[-1][2] - self.offset
 
     def get_time_hms(self, region, mode):
         """
@@ -142,23 +143,19 @@ class Oracle:
         self.offset += estimate - time
 
     # calibrates update speed based on a given region and its observed update time.
-    def calibrate(self, region, time, mode):
+    def calibrate(self, time, mode):
         """
         Calculates the per nation update speed to apply to all future predictions based off the true update time of a
         late updating region. Incorrect values (or any value for an early updating region) will negatively impact
         prediction accuracy. For best results, use an average value observed over several days.
 
-        :param region: Late updating region with known update time
-        :param time: True update time of region in seconds
+        :param time: True length of update
         :param mode: Update during which time was observed (must be "major" or "minor")
         """
         # per nation update speed is given by cumulative population / region update time in seconds
-        cPop = self.lookupTable[region.lower()][1]
-        speed = time / cPop
-
         # store this update speed. It will be lost if Oracle is restarted.
         if mode in self.speed.keys():
-            self.speed[mode] = speed
+            self.speed[mode] = time
 
     # creates a sorted CSV.
     def csv_export(self, mode, path):
@@ -199,7 +196,8 @@ class Oracle:
 
             for i in self.regionList:
                 out.write(
-                    "<tr><td>{url}</td><td>{pop}</td><td>{endo}</td><td>{founderless}</td><td>{h}</td><td>{m}</td><td>{s}</td></tr>\n".format(
+                    "<tr><td>{url}</td><td>{pop}</td><td>{endo}</td>"
+                    "<td>{founderless}</td><td>{h}</td><td>{m}</td><td>{s}</td></tr>\n".format(
                         url="http://www.nationstates.net/region=" + i[0].replace(" ", "_"),
                         pop=i[1],
                         endo=i[3],
