@@ -191,7 +191,8 @@ class Oracle:
         with file as out:
             out.write("""
             <html><head><title>{} update, {}</title></head><body>
-            <table>
+            <table><tr><td>URL</td><td>Population</td><td>Endorsements</td>
+            <td>Founderless?</td><td>H</td><td>M</td><td>S</td></tr>
             """.format(mode, datetime.date.today().strftime("%B %d-%Y")))
 
             for i in self.regionList:
