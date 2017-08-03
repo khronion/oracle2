@@ -99,15 +99,20 @@ class Delphi:
                 self.target = ' '.join(args)
                 try:
                     time = self.oracle.get_time_hms(self.target, self.mode)
-                    return "Time predicted for {}: {:02d}:{:02d}:{:02d}.".format(self.target, time[0], time[1], time[2])
+                    return "Time predicted for {}: {:02d}:{:02d}:{:02d}.\n" \
+                           "URL: http://nationstates.net/region={}".format(self.target, time[0], time[1], time[2],
+                                                                           self.target.replace(" ", "_"))
                 except KeyError:
                     return "ERROR: No such region {}".format(self.target)
 
             # recall last prediction
             elif action == self.cmd_review:
                 if self.target != "":
+
                     time = self.oracle.get_time_hms(self.target, self.mode)
-                    return "Time predicted for {}: {:02d}:{:02d}:{:02d}.".format(self.target, time[0], time[1], time[2])
+                    return "Time predicted for {}: {:02d}:{:02d}:{:02d}.\n" \
+                           "URL: http://nationstates.net/region={}".format(self.target, time[0], time[1], time[2],
+                                                                           self.target.replace(" ", "_"))
                 else:
                     return "ERROR: No previous region to recall."
 

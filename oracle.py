@@ -170,7 +170,7 @@ class Oracle:
             out.write("region,population,endorsements,founderless,h,m,s,,{},{}\n".
                       format(mode, datetime.date.today().strftime("%B %d-%Y")))
             for i in self.regionList:
-                out.write("{url},{pop},{endo},{founderless},{h},{m},{s}\n".format(
+                out.write("=HYPERLINK(\"{url}\"),{pop},{endo},{founderless},{h},{m},{s}\n".format(
                     url="http://www.nationstates.net/region=" + i[0].replace(" ", "_"),
                     pop=i[1],
                     endo=i[3],
@@ -225,7 +225,7 @@ class Oracle:
                       format(mode, datetime.date.today().strftime("%B %d-%Y")))
             for i in self.regionList:
                 if i[4] is True:
-                    out.write("{url},{pop},{endo},{founderless},{h},{m},{s}\n".format(
+                    out.write("=HYPERLINK(\"{url}\"),{pop},{endo},{founderless},{h},{m},{s}\n".format(
                         url="http://www.nationstates.net/region=" + i[0].replace(" ", "_"),
                         pop=i[1],
                         endo=i[3],
