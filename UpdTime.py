@@ -19,8 +19,6 @@
 # IMPORTANT: The above applies SOLELY to UpdTime, and does not apply to any
 # program or script it may come bundled with.
 
-from __future__ import with_statement
-from __future__ import absolute_import
 import urllib.request
 import datetime
 import xml.etree.ElementTree as et
