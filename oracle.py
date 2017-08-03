@@ -112,7 +112,7 @@ class Oracle:
         m = int(t / 60) % 60
         s = int(t % 60)
 
-        return (h, m, s)
+        return h, m, s
 
     def get_info(self, region):
         """

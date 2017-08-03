@@ -1,6 +1,7 @@
 import oracle
 import time
 import threading
+import UpdTime
 import datetime
 import urllib.request
 import urllib
@@ -42,7 +43,7 @@ class Delphi:
     cmd_start = 'start'
     cmd_stop = 'stop'
 
-    def __init__(self, regions, ua):
+    def __init__(self, regions, ua, debug=False):
         """
         Provides interactive Oracle functionality. This can be used to create bots and user interfaces.
 
@@ -51,29 +52,33 @@ class Delphi:
         :return:
         """
 
+        self.debug = debug
         self.regions = regions
 
         self.ua = ua
         self.oracle = oracle.Oracle(regions, ua)
 
-        # persistent state attributes
-        self.mode = "major"
+        self.time_now = datetime.datetime.utcnow().replace(tzinfo=UpdTime.UTC())
+        self.time_base = datetime.datetime.utcnow().replace(tzinfo=UpdTime.UTC(), hour=0, minute=0, second=0,
+                                                            microsecond=0)
+
+        # determine start time of closest update
+        # 16h = minor
+        # 4h = major
+        # easy: anything less than 16h is major (we don't really care about weird exception cases anyhow)
+
+        if self.time_now < self.time_base + datetime.timedelta(hours=16):
+            self.mode = "major"
+        else:
+            self.mode = "minor"
+
+        self.tracking = False
         self.target = None
 
-    # main command processor
+        self.runner = threading.Thread(target=self._runner, daemon=True)
+        self.runner.start()
 
-    def reload(self, regions=""):
-        """
-        Hotloads a new regions.xml.gz without restarting the Delphi wrapper. This will reset any offsets or
-        calibrations.
-
-        :param regions: Path to NationStates regional data dump. Can be a string or file object.
-        :return:
-        """
-        if regions == "":
-            self.oracle = oracle.Oracle(regions=self.regions, ua=self.oracle.ua)
-        else:
-            self.oracle = oracle.Oracle(regions=regions, ua=self.oracle.ua)
+        self.log = []
 
     def parse(self, command):
         """
@@ -83,6 +88,14 @@ class Delphi:
         :param command: user input string, formatted as "command arguments"
         :return: user-readable response string
         """
+
+        if self.log != []:
+            print("Queued debug messages:")
+            for _ in self.log:
+                print(_)
+            self.log = []
+            print("\n")
+
         action = command.split(" ")[0]
         args = command.split(" ")[1:]
         try:
@@ -136,10 +149,6 @@ class Delphi:
                 except KeyError:
                     return "ERROR: No such region {}.".format(region)
 
-            elif action == self.cmd_reload:
-                self.reload()
-                return "regions.xml.gz has been reloaded. Offsets and speed corrections reset."
-
             elif action == self.cmd_export:
                 self.oracle.csv_export(self.mode, args[0])
                 return "Exported CSV to {}".format(args[0])
@@ -150,11 +159,14 @@ class Delphi:
                 self.oracle.html_export(self.mode, args[0])
                 return "Exported HTML to {}".format(args[0])
             elif action == self.cmd_start:
-                #return self.start()
-                return "This functionality not implemented."
+                self.tracking = True
+                return "Tracking set to True"
             elif action == self.cmd_stop:
-                #return self.stop()
-                return "This functionality not implemented."
+                self.tracking = False
+                return "Tracking set to False."
+            elif action == "dbg": # this is for troubleshooting use only
+                self.debug = not self.debug
+                return "!!!! Debug flag toggled."
 
             else:
 
@@ -165,9 +177,8 @@ class Delphi:
                 {} <filename> - export CSV of oracle data using current update mode
                 {} <filename> - export CSV of oracle data for founderless regions using current update mode
                 {} <filename> - export HTML of oracle data using current update mode
-                {} - reload regions.xml.gz and reset Oracle settings to default
                 """.format(self.cmd_time, self.cmd_mode, self.cmd_review, self.cmd_offset,
-                           self.cmd_export, self.cmd_targets, self.cmd_html, self.cmd_reload, self.cmd_start,
+                           self.cmd_export, self.cmd_targets, self.cmd_html, self.cmd_start,
                            self.cmd_stop)
 
         except IndexError:
@@ -182,6 +193,54 @@ class Delphi:
         except ValueError:
             return ""
 
+    def query(self):
+        """
+        Queries the NationStates API for events which may reveal the current progress of the update.
+
+        :return: Array [region_name, observed_update_time] or None if no event was observed.
+        """
+        headers = {u'User-Agent': self.ua}
+        feed_url = u"https://www.nationstates.net/cgi-bin/api.cgi?q=happenings;filter=change;"
+        query = urllib.request.Request(feed_url, headers=headers)
+        xml = ET.fromstring(urllib.request.urlopen(query).read())
+
+        for event in xml.iter(u'EVENT'):
+            time = int(event.find(u"TIMESTAMP").text)
+            event_text = event.find(u"TEXT").text
+            if u"influence" in event_text or u"ranked" in event_text:
+                nation = event_text.split("@@")[1]
+                region_url = u"https://www.nationstates.net/cgi-bin/api.cgi?nation={}&q=region".format(nation)
+                region_query = urllib.request.Request(region_url, headers=headers)
+                region_xml = ET.fromstring(urllib.request.urlopen(region_query).read())
+                region = region_xml.find(u"REGION").text
+
+                # calculate how long after the update start the event was observed
+                if self.mode is "minor":
+                    time -= UpdTime.UpdTime.timestamp(self.time_base + datetime.timedelta(hours=16))
+                else:
+                    time -= UpdTime.UpdTime.timestamp(self.time_base + datetime.timedelta(hours=4))
+
+                if self.debug is True:
+                    self.log.append("HIT: {} updated {} sec in".format(region, time))
+                    self.log.append("API Query: {}").format(region_url.replace(" ", "_"))
+
+                return [region, time]
+        return None
+
+    def _runner(self):
+        while True:
+            time.sleep(5)
+            if self.tracking is True:
+                if self.debug:
+                    self.log.append("Making query...")
+                event_time = self.query()
+
+                if event_time is not None:
+                    self.oracle.set_offset(event_time[0], event_time[1], self.mode)
+                    if self.debug:
+                       self.log.append("INFO: Event observed {}".format(event_time))
+            elif self.debug is True:
+                self.log.append("Tracking is disabled...")
 
 if __name__ == '__main__':
     print("Delphi: Interactive Oracle Shell\n")
@@ -202,7 +261,7 @@ if __name__ == '__main__':
 
     while True:
         print("Ready.")
-        cmd = input("> ".format(delphi.mode, delphi.target))
+        cmd = input("DELPHI({})> ".format(delphi.mode, delphi.target))
         if cmd == 'quit':
             break
         print(delphi.parse(cmd))
