@@ -1,7 +1,7 @@
 # oracle2
 *Python-based update tracker for NationStates*
 
-##Overview
+## Overview
 *Oracle2* is a cross-platform NationStates update tracker written in Python. It uses daily dump data supplied by NationStates to track the progress of the game's twice-daily regional update in order to make accurate predictions of a region's true update. It does so through a combination of linear regression combined with a correction value based off of observed error between its predictions and true observed times, which can be specified manually or be automatically scraped via API. The program can also be used to quickly generate spreadsheets to aid manual triggering.
 
 It consists of two Python classes:
@@ -11,21 +11,14 @@ It consists of two Python classes:
 
 The program is somewhat similar to [ADR-20XX](https://github.com/doomjaw/ADR-20XX/), which uses a slightly more sophisticated tracking algorithim implemented in .NET.
 
-##Getting Started
-Download a copy of the latest regions.xml.gz to the same directory as the Oracle2 installation, and run Oracle2 by typing
+## Getting Started
+Open a terminal and run `delphi.py` to access the interactive oracle shell, which interprets your commands and passes back Oracle responses in human-readable format.
 
 ```python3 delphi.py```
 
 You will be asked to supply your nation name -- This is required by the NationStates terms-of-service.
 
-```
-Unique identifier (use an email or nation name): khronion
-Update speed values generated on 3/26 (major: spear danes; minor: unity)
-Ready.
-> 
-```
-
-At this point, you may issue commands. A listing of commands taken directly from `delphi2.py` is provided for your reference.
+At this point, you may issue commands. See below for a full catalog.
 
 ```
 t <region> - get region time
@@ -37,9 +30,7 @@ export <filename> - export CSV of oracle data using current update mode
 targets <filename> - export CSV of oracle data for founderless regions using current update mode
 html <filename> - export HTML of oracle data using current update mode
 reload - reload regions.xml.gz and reset Oracle settings to default
-start - start automatic region tracking via API (engaged by default)
-stop - stop automatic region tracking via API
 ```
 
-##Disclaimer
+## Disclaimer
 Oracle2 is designed to respect the NationStates API ratelimit. However, you may inadvertently exceed the ratelimit if you run multiple instances of Oracle2, or run another API-utilizing program at the same time.
