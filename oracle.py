@@ -3,25 +3,22 @@ import urllib.request
 import urllib
 import gzip
 import datetime
-import UpdTime
 
-# Oracle: Nationstates Region Update Predictor
-# Project page: <https://gitlab.com/khronion/oracle>
+# Oracle 2 NationStates Update Prediction Framework
+# Copyright (c) 2017 Khronion <khronion@gmail.com>
 #
-# Maintained by Khronion <khronion@gmail.com>
-#
-# This program is free software: you can redistribute it and/or modify
+# Oracle2 is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# This program is distributed in the hope that it will be useful,
+# Oracle2 is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with Oracle2.  If not, see <http://www.gnu.org/licenses/>.
 
 
 class Oracle:
@@ -31,11 +28,9 @@ class Oracle:
 
         :param regions: Path to NationStates regions.xml.gz dump
         :param ua: User Agent string that identifies the operator as required by NS TOS; Should be an email or nation
-        :param major: Length of major update
-        :param minor: Length of minor update
         """
 
-        self.speed = UpdTime.UpdTime(ua).get()
+        self.speed = {'minor': 60 * 45, 'major': 60 * 60}
 
         self.version = 1
         # set UA
@@ -85,6 +80,9 @@ class Oracle:
         # set default offset to zero.
         self.offset = 0
 
+        # set default nudge to zero
+        self.nudge = 0
+
     # predicts a region's update time
     def get_time(self, region, mode):
         """
@@ -97,7 +95,7 @@ class Oracle:
         # update time is given by region's cumulative population * per nation update speed
         cPop = self.lookupTable[region.lower()][1]
 
-        return cPop * self.speed[mode] / self.regionList[-1][2] - self.offset
+        return cPop * self.speed[mode] / self.regionList[-1][2] - self.offset + self.nudge
 
     def get_time_hms(self, region, mode):
         """
@@ -112,7 +110,7 @@ class Oracle:
         m = int(t / 60) % 60
         s = int(t % 60)
 
-        return (h, m, s)
+        return h, m, s
 
     def get_info(self, region):
         """
@@ -141,6 +139,14 @@ class Oracle:
         """
         estimate = self.get_time(region, mode)
         self.offset += estimate - time
+
+    def set_nudge(self, nudge):
+        """
+        Sets a hard nudge value that is used to offset every prediction regardless of offset.
+
+        :param nudge: Amount of nudge in seconds. Negative values are acceptable.
+        """
+        self.nudge = nudge
 
     # calibrates update speed based on a given region and its observed update time.
     def calibrate(self, time, mode):
@@ -191,7 +197,8 @@ class Oracle:
         with file as out:
             out.write("""
             <html><head><title>{} update, {}</title></head><body>
-            <table>
+            <table><tr><td>URL</td><td>Population</td><td>Endorsements</td>
+            <td>Founderless?</td><td>H</td><td>M</td><td>S</td></tr>
             """.format(mode, datetime.date.today().strftime("%B %d-%Y")))
 
             for i in self.regionList:
