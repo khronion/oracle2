@@ -1,45 +1,51 @@
 # oracle2
+
 *Python-based update tracker for NationStates*
 
 ##Overview
-*Oracle2* is a cross-platform NationStates update tracker written in Python. It uses daily dump data supplied by NationStates to track the progress of the game's twice-daily regional update in order to make accurate predictions of a region's true update. It does so through a combination of linear regression combined with a correction value based off of observed error between its predictions and true observed times, which can be specified manually or be automatically scraped via API. The program can also be used to quickly generate spreadsheets to aid manual triggering.
+
+Oracle2 is a cross-platform NationStates update tracker written in Python. It uses daily dump data supplied by NationStates to track the progress of the game's twice-daily regional update in order to make accurate predictions of a region's true update. It does so through a combination of linear regression combined with a correction value based off of observed error between its predictions and true observed times, which can be specified manually or be automatically scraped via API. The program can also be used to quickly generate spreadsheets to aid manual triggering.
 
 It consists of two Python classes:
 
 * `oracle.py` -- Parses daily dump data to predict regional update times and calculates error offsets based on supplied true time data.
-* `delphi.py` -- Provides a front-end to Oracle allowing interactive terminal use and automatic API scraping for true update times.
+* `delphi.py` -- Provides automatic API scraping and a basic text user interface for making Oracle queries during an update.
 
-The program is somewhat similar to [ADR-20XX](https://github.com/doomjaw/ADR-20XX/), which uses a slightly more sophisticated tracking algorithim implemented in .NET.
+The program is similar to [ADR-20XX](https://github.com/doomjaw/ADR-20XX/), which uses a slightly more sophisticated tracking algorithm implemented in C#. Unlike Oracle2, ADR-20XX requires an internet connection during operation, whereas Oracle2 can be operated fully offline once an API dump is downloaded.
 
 ##Getting Started
-Download a copy of the latest regions.xml.gz to the same directory as the Oracle2 installation, and run Oracle2 by typing
+
+Run Oracle2 by running:
 
 ```python3 delphi.py```
 
-You will be asked to supply your nation name -- This is required by the NationStates terms-of-service.
+You will be asked to supply your nation name for the user-agent, as required by the NationStates Terms of Service.
 
 ```
-Unique identifier (use an email or nation name): khronion
-Update speed values generated on 3/26 (major: spear danes; minor: unity)
-Ready.
+Primary Nation Name: khronion
+Do you want to download the latest daily dump? (Y/N) n
+
+Last target:  (Type 'r' to recall time prediction.)
+[02:41:22 UTC] DELPHI>
 > 
 ```
 
-At this point, you may issue commands. A listing of commands taken directly from `delphi2.py` is provided for your reference.
+At this point, you may issue commands.
 
 ```
-t <region> - get region time
-m <major|minor> - set update mode to major or minor
-r - recall last targeted  region
-o <hh:mm:ss> - indicate true update time in hh:mm:ss of last targeted region
-c <region> <hh:mm:ss> - calibrate update speed based on time of late updating region
-export <filename> - export CSV of oracle data using current update mode
-targets <filename> - export CSV of oracle data for founderless regions using current update mode
-html <filename> - export HTML of oracle data using current update mode
-reload - reload regions.xml.gz and reset Oracle settings to default
-start - start automatic region tracking via API (engaged by default)
-stop - stop automatic region tracking via API
+t <region>      Get region time
+r               Recall last targeted region
+m <major|minor> Set update mode to major or minor
+o <MM SS>       Indicate true update time in minutes and seconds of last targeted region
+n <seconds>     Add/subtract from nudge value to offset all future predictions.
+                If blank, resets nudge.
+start           Start automatic tracking
+stop            Stop automatic tracking
+pull            Manually trigger an API query (only works if automatic tracking is not running)
+                WARNING: calling this command repeatedly could trigger an API rate limit violation!
+dbg             Toggle debug messages
 ```
 
 ##Disclaimer
-Oracle2 is designed to respect the NationStates API ratelimit. However, you may inadvertently exceed the ratelimit if you run multiple instances of Oracle2, or run another API-utilizing program at the same time.
+
+Oracle2 is designed to respect the NationStates API rate limit. However, you may inadvertently exceed the rate limit if you run multiple instances of Oracle2 or run another API-utilizing program at the same time.
