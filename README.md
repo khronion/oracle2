@@ -2,7 +2,7 @@
 
 *Python-based update tracker for NationStates*
 
-##Overview
+## Overview
 
 Oracle2 is a cross-platform NationStates update tracker written in Python. It uses daily dump data supplied by NationStates to track the progress of the game's twice-daily regional update in order to make accurate predictions of a region's true update. It does so through a combination of linear regression combined with a correction value based off of observed error between its predictions and true observed times, which can be specified manually or be automatically scraped via API. The program can also be used to quickly generate spreadsheets to aid manual triggering.
 
@@ -13,7 +13,7 @@ It consists of two Python classes:
 
 The program is similar to [ADR-20XX](https://github.com/doomjaw/ADR-20XX/), which uses a slightly more sophisticated tracking algorithm implemented in C#. Unlike Oracle2, ADR-20XX requires an internet connection during operation, whereas Oracle2 can be operated fully offline once an API dump is downloaded.
 
-##Getting Started
+## Getting Started
 
 Run Oracle2 by running:
 
@@ -46,6 +46,6 @@ pull            Manually trigger an API query (only works if automatic tracking 
 dbg             Toggle debug messages
 ```
 
-##Disclaimer
+## Disclaimer
 
 Oracle2 is designed to respect the NationStates API rate limit. However, you may inadvertently exceed the rate limit if you run multiple instances of Oracle2 or run another API-utilizing program at the same time.
