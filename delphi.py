@@ -233,7 +233,7 @@ dbg             Toggle debug messages
         :return: Array [region_name, observed_update_time] or None if no event was observed.
         """
         headers = {u'User-Agent': self.ua}
-        feed_url = u"https://www.nationstates.net/cgi-bin/api.cgi?q=happenings;filter=admin;"
+        feed_url = u"https://www.nationstates.net/cgi-bin/api.cgi?q=happenings;filter=change;"
         query = urllib.request.Request(feed_url, headers=headers)
         xml = ElementTree.fromstring(urllib.request.urlopen(query).read())
 
