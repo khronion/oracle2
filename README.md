@@ -1,3 +1,5 @@
+**I am no longer developing any of my NationStates-related projects. Any individual may fork this codebase under the terms of the GNU General Public License, v. 3. Please see <http://www.gnu.org/licenses/> for details.**
+
 # oracle2
 
 *Python-based update tracker for NationStates*
